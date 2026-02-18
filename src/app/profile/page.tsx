@@ -75,8 +75,26 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false)
   const [history, setHistory] = useState<LabVisit[]>([])
 
-  const loadPatientHistory = (id: string) => {
-    const h = loadHistory(id)
+  const loadPatientHistory = (p: PatientProfile) => {
+    let h = loadHistory(p.id)
+    // Generate synthetic demo data if no history exists
+    if (h.length === 0) {
+      const now = new Date()
+      h = Array.from({ length: 6 }, (_, i) => {
+        const date = new Date(now)
+        date.setMonth(date.getMonth() - (5 - i))
+        return {
+          date: date.toISOString().split('T')[0],
+          profile: {
+            ...p,
+            sbp: Math.round(p.sbp * (1 + (5 - i) * 0.02)),
+            ldl: Math.round(p.ldl * (1 + (5 - i) * 0.03)),
+            hba1c: +(p.hba1c * (1 + (5 - i) * 0.015)).toFixed(1),
+            bmi: +(p.bmi * (1 + (5 - i) * 0.01)).toFixed(1),
+          }
+        }
+      })
+    }
     setHistory(h)
   }
 
@@ -89,7 +107,7 @@ export default function ProfilePage() {
     const active = p.find(x => x.id === id) || p[0]
     if (active) {
       setForm({ ...active })
-      loadPatientHistory(active.id)
+      loadPatientHistory(active)
     }
   }, [])
 
@@ -99,7 +117,7 @@ export default function ProfilePage() {
     const p = patients.find(x => x.id === id)
     if (p) {
       setForm({ ...p })
-      loadPatientHistory(id)
+      loadPatientHistory(p)
     }
   }
 
@@ -114,7 +132,7 @@ export default function ProfilePage() {
     setPatients(updated)
     savePatients(updated)
     addVisit(form.id, form)
-    loadPatientHistory(form.id)
+    loadPatientHistory(form)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
