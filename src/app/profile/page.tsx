@@ -5,9 +5,9 @@ import Navigation from '@/components/Navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { loadPatients, savePatients, getActivePatientId, setActivePatientId, addVisit } from '@/lib/store'
-import { PatientProfile, demoPatients } from '@/lib/ncd-cie-engine'
-import { Save, RotateCcw, Plus, Trash2, UserPlus } from 'lucide-react'
+import { loadPatients, savePatients, getActivePatientId, setActivePatientId, addVisit, loadHistory, LabVisit } from '@/lib/store'
+import { PatientProfile, demoPatients, computeAllRisks, getRiskColor } from '@/lib/ncd-cie-engine'
+import { Save, RotateCcw, UserPlus, Calendar, RotateCw } from 'lucide-react'
 
 const fieldGroups = [
   {
@@ -73,6 +73,12 @@ export default function ProfilePage() {
   const [form, setForm] = useState<PatientProfile | null>(null)
   const [mounted, setMounted] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [history, setHistory] = useState<LabVisit[]>([])
+
+  const loadPatientHistory = (id: string) => {
+    const h = loadHistory(id)
+    setHistory(h)
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -81,14 +87,20 @@ export default function ProfilePage() {
     const id = getActivePatientId()
     setActiveId(id)
     const active = p.find(x => x.id === id) || p[0]
-    if (active) setForm({ ...active })
+    if (active) {
+      setForm({ ...active })
+      loadPatientHistory(active.id)
+    }
   }, [])
 
   const selectPatient = (id: string) => {
     setActiveId(id)
     setActivePatientId(id)
     const p = patients.find(x => x.id === id)
-    if (p) setForm({ ...p })
+    if (p) {
+      setForm({ ...p })
+      loadPatientHistory(id)
+    }
   }
 
   const updateField = (key: string, value: number) => {
@@ -102,8 +114,13 @@ export default function ProfilePage() {
     setPatients(updated)
     savePatients(updated)
     addVisit(form.id, form)
+    loadPatientHistory(form.id)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const loadVisit = (visit: LabVisit) => {
+    setForm({ ...visit.profile })
   }
 
   const handleReset = () => {
@@ -238,6 +255,71 @@ export default function ProfilePage() {
             Reset to Demo
           </Button>
         </div>
+
+        {/* Visit History */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-teal-500" />
+              Visit History
+            </CardTitle>
+            <CardDescription>
+              {history.length === 0
+                ? 'No visits recorded yet. Save to record the first visit.'
+                : `${history.length} visit${history.length > 1 ? 's' : ''} recorded`
+              }
+            </CardDescription>
+          </CardHeader>
+          {history.length > 0 && (
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-navy-100 dark:border-navy-700">
+                      <th className="text-left py-2 px-3 text-navy-500">Date</th>
+                      <th className="text-right py-2 px-3 text-navy-500">SBP</th>
+                      <th className="text-right py-2 px-3 text-navy-500">LDL</th>
+                      <th className="text-right py-2 px-3 text-navy-500">HbA1c</th>
+                      <th className="text-right py-2 px-3 text-navy-500">BMI</th>
+                      <th className="text-right py-2 px-3 text-navy-500">NCD Risk</th>
+                      <th className="text-center py-2 px-3 text-navy-500">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.slice().reverse().map((visit, i) => {
+                      const r = computeAllRisks(visit.profile)
+                      return (
+                        <tr key={i} className="border-b border-navy-50 dark:border-navy-800">
+                          <td className="py-2 px-3 font-medium">{visit.date}</td>
+                          <td className="py-2 px-3 text-right">{visit.profile.sbp}</td>
+                          <td className="py-2 px-3 text-right">{visit.profile.ldl}</td>
+                          <td className="py-2 px-3 text-right">{visit.profile.hba1c}</td>
+                          <td className="py-2 px-3 text-right">{visit.profile.bmi}</td>
+                          <td className="py-2 px-3 text-right">
+                            <span className="font-medium" style={{ color: getRiskColor(r.ncd_composite) }}>
+                              {(r.ncd_composite * 100).toFixed(1)}%
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => loadVisit(visit)}
+                              className="text-teal-600 hover:text-teal-700 dark:text-teal-400"
+                            >
+                              <RotateCw className="h-3 w-3 mr-1" />
+                              Load
+                            </Button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          )}
+        </Card>
       </main>
     </>
   )
