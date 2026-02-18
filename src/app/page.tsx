@@ -16,12 +16,10 @@ import {
   Zap,
   ArrowRight,
   User,
-  TrendingDown,
-  TrendingUp,
+  ChevronDown,
   Pill,
   Cigarette,
   Dumbbell,
-  UserPlus,
 } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -108,23 +106,18 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-navy-800 dark:text-white">Dashboard</h1>
             <p className="text-navy-500 dark:text-navy-300">Risk overview for {patient.name}</p>
           </div>
-          <div className="flex gap-2 items-center">
-            {patients.map(p => (
-              <Button
-                key={p.id}
-                variant={p.id === activeId ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => { setActiveId(p.id); setActivePatientId(p.id) }}
-              >
-                {p.name.split(' ')[0]}
-              </Button>
-            ))}
-            <Link href="/profile?new=true">
-              <Button variant="outline" size="sm" className="flex items-center gap-1 text-teal-600 border-teal-300 hover:bg-teal-50 dark:text-teal-400 dark:border-teal-700 dark:hover:bg-teal-900/30">
-                <UserPlus className="h-4 w-4" />
-                Add Patient
-              </Button>
-            </Link>
+          <div className="relative">
+            <select
+              value={activeId}
+              onChange={(e) => { setActiveId(e.target.value); setActivePatientId(e.target.value) }}
+              className="appearance-none bg-white dark:bg-navy-800 border border-navy-200 dark:border-navy-600 rounded-lg pl-9 pr-8 py-2 text-sm font-medium text-navy-700 dark:text-navy-200 cursor-pointer hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              {patients.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-navy-400" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-navy-400 pointer-events-none" />
           </div>
         </div>
 
