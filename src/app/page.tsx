@@ -21,6 +21,7 @@ import {
   Pill,
   Cigarette,
   Dumbbell,
+  UserPlus,
 } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -42,7 +43,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true)
-    const p = loadPatients()
+    const p = loadPatients().filter(patient => patient.name !== 'Patient')
     setPatients(p)
     const id = getActivePatientId()
     setActiveId(id)
@@ -107,7 +108,7 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-navy-800 dark:text-white">Dashboard</h1>
             <p className="text-navy-500 dark:text-navy-300">Risk overview for {patient.name}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {patients.map(p => (
               <Button
                 key={p.id}
@@ -118,6 +119,12 @@ export default function Dashboard() {
                 {p.name.split(' ')[0]}
               </Button>
             ))}
+            <Link href="/profile?new=true">
+              <Button variant="outline" size="sm" className="flex items-center gap-1 text-teal-600 border-teal-300 hover:bg-teal-50 dark:text-teal-400 dark:border-teal-700 dark:hover:bg-teal-900/30">
+                <UserPlus className="h-4 w-4" />
+                Add Patient
+              </Button>
+            </Link>
           </div>
         </div>
 
