@@ -455,13 +455,14 @@ export default function KnowledgeGraphPage() {
           <div className="lg:col-span-3">
             <Card className="overflow-hidden">
               <CardContent className="p-0">
-                <div className="relative overflow-auto" style={{ height: '700px' }}>
+                <div className="relative" style={{ height: '650px' }}>
                   <svg
                     width="100%"
                     height="100%"
                     viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`}
+                    preserveAspectRatio="xMidYMid meet"
                     className="bg-navy-50/30 dark:bg-navy-900/50"
-                    style={{ transform: `scale(${zoom})`, transformOrigin: 'center', minWidth: CANVAS_WIDTH, minHeight: CANVAS_HEIGHT }}
+                    style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }}
                     onClick={() => setSelectedNode(null)}
                   >
                     {/* Edges - Curved Bezier */}

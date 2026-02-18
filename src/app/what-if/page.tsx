@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
-import { loadPatients, getActivePatientId } from '@/lib/store'
+import { loadPatients, getActivePatientId, setActivePatientId } from '@/lib/store'
 import {
   PatientProfile,
   computeAllRisks,
@@ -29,6 +29,8 @@ import {
   Activity,
   Weight,
   Stethoscope,
+  User,
+  ChevronDown,
 } from 'lucide-react'
 
 interface Intervention {
@@ -110,6 +112,15 @@ export default function WhatIfPage() {
 
   const resetInterventions = () => setInterventions({ ...defaultInterventions })
 
+  const handlePatientChange = (id: string) => {
+    const p = patients.find(x => x.id === id)
+    if (p) {
+      setPatient(p)
+      setActivePatientId(id)
+      resetInterventions()
+    }
+  }
+
   if (!mounted || !patient || !interventionResult) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -141,14 +152,30 @@ export default function WhatIfPage() {
     <>
       <Navigation />
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-navy-800 dark:text-white">What-If Simulator</h1>
             <p className="text-navy-500 dark:text-navy-300">Explore intervention impacts for {patient.name}</p>
           </div>
-          <Button variant="outline" onClick={resetInterventions}>
-            <RotateCcw className="h-4 w-4 mr-2" /> Reset
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Patient Selector */}
+            <div className="relative">
+              <select
+                value={patient.id}
+                onChange={(e) => handlePatientChange(e.target.value)}
+                className="appearance-none bg-white dark:bg-navy-800 border border-navy-200 dark:border-navy-600 rounded-lg pl-9 pr-8 py-2 text-sm font-medium text-navy-700 dark:text-navy-200 cursor-pointer hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                {patients.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-navy-400" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-navy-400 pointer-events-none" />
+            </div>
+            <Button variant="outline" onClick={resetInterventions}>
+              <RotateCcw className="h-4 w-4 mr-2" /> Reset
+            </Button>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">

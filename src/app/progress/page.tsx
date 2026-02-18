@@ -4,10 +4,10 @@ import { useState, useEffect, useMemo } from 'react'
 import Navigation from '@/components/Navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { loadPatients, getActivePatientId, loadHistory, LabVisit } from '@/lib/store'
+import { loadPatients, getActivePatientId, setActivePatientId, loadHistory, LabVisit } from '@/lib/store'
 import { PatientProfile, computeAllRisks, getRiskColor, getRiskLevel } from '@/lib/ncd-cie-engine'
 import { motion } from 'framer-motion'
-import { TrendingDown, TrendingUp, Award, Calendar, FileDown, Minus } from 'lucide-react'
+import { TrendingDown, TrendingUp, Award, Calendar, FileDown, Minus, User, ChevronDown } from 'lucide-react'
 import {
   LineChart,
   Line,
@@ -21,40 +21,54 @@ import {
 } from 'recharts'
 
 export default function ProgressPage() {
+  const [patients, setPatients] = useState<PatientProfile[]>([])
   const [patient, setPatient] = useState<PatientProfile | null>(null)
   const [history, setHistory] = useState<LabVisit[]>([])
   const [mounted, setMounted] = useState(false)
 
+  const loadPatientHistory = (p: PatientProfile) => {
+    let h = loadHistory(p.id)
+    // If no history, create synthetic demo data
+    if (h.length === 0) {
+      const now = new Date()
+      h = Array.from({ length: 6 }, (_, i) => {
+        const date = new Date(now)
+        date.setMonth(date.getMonth() - (5 - i))
+        return {
+          date: date.toISOString().split('T')[0],
+          profile: {
+            ...p,
+            sbp: Math.round(p.sbp * (1 + (5 - i) * 0.02)),
+            ldl: Math.round(p.ldl * (1 + (5 - i) * 0.03)),
+            hba1c: +(p.hba1c * (1 + (5 - i) * 0.015)).toFixed(1),
+            bmi: +(p.bmi * (1 + (5 - i) * 0.01)).toFixed(1),
+          }
+        }
+      })
+    }
+    setHistory(h)
+  }
+
   useEffect(() => {
     setMounted(true)
-    const patients = loadPatients()
+    const allPatients = loadPatients()
+    setPatients(allPatients)
     const id = getActivePatientId()
-    const p = patients.find(x => x.id === id) || patients[0]
+    const p = allPatients.find(x => x.id === id) || allPatients[0]
     setPatient(p)
     if (p) {
-      let h = loadHistory(p.id)
-      // If no history, create synthetic demo data
-      if (h.length === 0 && p) {
-        const now = new Date()
-        h = Array.from({ length: 6 }, (_, i) => {
-          const date = new Date(now)
-          date.setMonth(date.getMonth() - (5 - i))
-          const factor = 1 + (5 - i) * 0.04 // gradually worse in the past
-          return {
-            date: date.toISOString().split('T')[0],
-            profile: {
-              ...p,
-              sbp: Math.round(p.sbp * (1 + (5 - i) * 0.02)),
-              ldl: Math.round(p.ldl * (1 + (5 - i) * 0.03)),
-              hba1c: +(p.hba1c * (1 + (5 - i) * 0.015)).toFixed(1),
-              bmi: +(p.bmi * (1 + (5 - i) * 0.01)).toFixed(1),
-            }
-          }
-        })
-      }
-      setHistory(h)
+      loadPatientHistory(p)
     }
   }, [])
+
+  const handlePatientChange = (id: string) => {
+    const p = patients.find(x => x.id === id)
+    if (p) {
+      setPatient(p)
+      setActivePatientId(id)
+      loadPatientHistory(p)
+    }
+  }
 
   const trendData = useMemo(() => {
     return history.map(v => {
@@ -106,10 +120,24 @@ export default function ProgressPage() {
     <>
       <Navigation />
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-navy-800 dark:text-white">Progress Tracker</h1>
             <p className="text-navy-500 dark:text-navy-300">Tracking {patient.name}&apos;s journey over time</p>
+          </div>
+          {/* Patient Selector */}
+          <div className="relative">
+            <select
+              value={patient.id}
+              onChange={(e) => handlePatientChange(e.target.value)}
+              className="appearance-none bg-white dark:bg-navy-800 border border-navy-200 dark:border-navy-600 rounded-lg pl-9 pr-8 py-2 text-sm font-medium text-navy-700 dark:text-navy-200 cursor-pointer hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              {patients.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-navy-400" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-navy-400 pointer-events-none" />
           </div>
         </div>
 
